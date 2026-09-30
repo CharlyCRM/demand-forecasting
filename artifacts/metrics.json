@@ -1,0 +1,28 @@
+{
+  "dataset": "UCI Bike Sharing / hour.csv",
+  "source": "https://archive.ics.uci.edu/static/public/275/bike+sharing+dataset.zip",
+  "sha256": "e03de4ee4ef4dc376ac6e04bf829673c6269e8eba5c60fa121640fa2f829504f",
+  "protocol": "Rolling one-hour-ahead prediction; exact 24h/168h lags known at each origin. Weather covariates are assumed available, not independently forecast.",
+  "split": {
+    "train": 10170,
+    "validation": 3390,
+    "test": 3390,
+    "test_start": "2012-08-08 07:00:00",
+    "test_end": "2012-12-31 23:00:00"
+  },
+  "selected_max_leaf_nodes": 15,
+  "baseline_seasonal_168h": {
+    "mae": 63.94631268436578,
+    "rmse": 109.61869013602855
+  },
+  "gradient_boosting": {
+    "mae": 44.52401097305079,
+    "rmse": 70.28013893499518
+  },
+  "limitations": [
+    "One historical bike-sharing system; no production validation.",
+    "Not a multi-step batch forecast: observed history updates at each prediction origin.",
+    "Weather values are assumed known; results may be optimistic relative to actual weather forecasts.",
+    "Temporal slices have different seasonal distributions."
+  ]
+}
