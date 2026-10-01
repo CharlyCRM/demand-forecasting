@@ -23,7 +23,15 @@ El entrenamiento descarga el dataset, conserva su SHA256 y genera `artifacts/met
 
 Los lags se unen por hora exacta; los huecos del dataset no desplazan la referencia temporal. La evaluación simula predicciones sucesivas a una hora con historia observada actualizada. **No equivale a predecir una semana sin conocer sus valores intermedios.** La meteorología se asume disponible; el experimento no mide el error adicional de predecirla. No se promete un porcentaje de mejora ni eficacia en otros sistemas.
 
-Resultados ejecutados: ver [artifacts/metrics.json](artifacts/metrics.json). La demo permite visualizar el periodo de test e inferir sobre una observación.
+Resultados ejecutados: ver [artifacts/metrics.json](artifacts/metrics.json).
+
+## Aplicación interactiva
+
+Abre http://localhost:8501/ (inglés: `/?lang=en`). La configuración del repositorio limita el servicio a loopback y desactiva telemetría. Interfaz oscura ES/EN, ventana temporal editable, comparación observación/modelo/baseline y exportación CSV.
+
+El escenario meteorológico parte de una observación del test. Permite editar temperatura, sensación térmica, humedad y viento normalizados a [0,1], manteniendo calendario e historia constantes. Compara ambas predicciones; no asigna un valor observado al escenario ni recalcula métricas. No estima efectos causales y puede extrapolar con combinaciones poco realistas.
+
+Cambiar de idioma conserva los controles. Cambiar la observación restablece sus condiciones originales. La aplicación no entrena ni descarga datos automáticamente: si faltan artefactos, muestra instrucciones. `PORTFOLIO_URL` configura el enlace de regreso; por defecto http://localhost:4322.
 
 ## Datos y licencia
 
