@@ -1,4 +1,4 @@
-"""Temporal demand forecasting with a held-out, chronological test set."""
+"""Entrena y evalúa la predicción de alquileres respetando el orden temporal."""
 
 import hashlib
 import io
@@ -50,7 +50,7 @@ def prepare(raw):
         frame.hr, unit="h"
     )
     frame = frame.sort_values("timestamp").set_index("timestamp")
-    # Exact clock-time joins: missing hours must not shift the seasonal features.
+    # Buscamos la hora exacta: una lectura ausente no debe desplazar los retardos.
     lookup = frame["cnt"]
     for hours in (24, 168):
         frame[f"lag{hours}"] = lookup.reindex(

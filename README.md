@@ -1,8 +1,40 @@
-# Anticipar la demanda / Demand Forecasting
+# Anticipar la demanda
 
-Proyecto de portfolio de Carlos Ramírez Martín. Predicción horaria de alquileres con **evaluación temporal**, baseline estacional, modelo de gradient boosting, API y demo.
+¿Cuántas bicicletas se alquilarán la próxima hora? En este proyecto trabajo con un histórico de alquileres para comparar una predicción basada en machine learning con una referencia sencilla: los alquileres de la misma hora de la semana anterior.
 
-## Ejecutar (Python 3.11)
+La aplicación permite recorrer el histórico, contrastar las predicciones con lo que ocurrió y probar cómo responde el modelo cuando cambian las condiciones meteorológicas. Es una forma de explorar tanto sus aciertos como los momentos en los que se equivoca.
+
+[Abrir la aplicación](https://demand-forecasting-production-4989.up.railway.app) · [Ver el proyecto en mi portfolio](https://carlos-ramirez-martin.up.railway.app/es/projects/demand-forecasting/)
+
+## Qué puedes probar
+
+- Elegir un tramo del histórico y comparar alquileres reales, predicción y referencia semanal.
+- Partir de una observación y modificar temperatura, sensación térmica, humedad o viento para ver cómo cambia la predicción.
+- Descargar el escenario en CSV y consultar el informe de evaluación.
+
+Los controles meteorológicos usan valores normalizados entre 0 y 1, no grados ni velocidades en unidades físicas. Cambiar de observación recupera sus condiciones originales; cambiar de idioma conserva la selección.
+
+La demo está en español e inglés. Se suspende cuando no se utiliza, por lo que la primera apertura puede tardar. Solo está publicada la interfaz de Streamlit; la API se ejecuta por separado en local.
+
+## Cómo lo he planteado
+
+Uso `HistGradientBoostingRegressor` con calendario, meteorología y alquileres registrados 24 y 168 horas antes. Esas referencias se buscan por fecha y hora exactas: si falta una lectura, no tomo por error otra fila como si correspondiera al mismo momento.
+
+Divido los datos por orden temporal: el primer 60 % sirve para entrenar, el siguiente 20 % para elegir entre dos configuraciones y el último 20 % queda reservado para evaluar. Una vez elegida la configuración, vuelvo a entrenar con los dos primeros bloques y comparo MAE y RMSE con la referencia semanal. Excluyo `casual` y `registered`, porque su suma revela el objetivo.
+
+Los resultados, las fechas de cada bloque y el SHA-256 de los datos están en [artifacts/metrics.json](artifacts/metrics.json).
+
+## Hasta dónde llega el experimento
+
+La evaluación simula predicciones sucesivas a una hora, incorporando el histórico observado en cada momento. No es una previsión de toda una semana hecha de una sola vez. Además, supone que conocemos la meteorología de la hora que se va a predecir; no incluye el error de un pronóstico meteorológico.
+
+El escenario mantiene fijos el calendario y el histórico. Cambiar la temperatura muestra la respuesta del modelo, no demuestra que ese cambio provoque más o menos alquileres. Algunas combinaciones pueden quedar fuera de las condiciones habituales del dataset. No asigno un resultado real a esos escenarios ni los uso para recalcular las métricas.
+
+Los datos pertenecen a un único sistema de bicicletas compartidas. Los resultados no garantizan el mismo comportamiento en otro servicio.
+
+## Ejecutarlo en local
+
+Necesitas Python 3.11. Desde la carpeta del repositorio:
 
 ```sh
 python3 -m venv .venv
@@ -10,29 +42,25 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python forecast.py
 pytest -q
-streamlit run app.py --server.address 127.0.0.1
-# API, en otro terminal
+streamlit run app.py --server.address 127.0.0.1 --server.port 8501
+```
+
+Abre http://localhost:8501/; añade `/?lang=en` para entrar en inglés.
+
+`forecast.py` descarga el dataset si falta y genera el modelo, `artifacts/metrics.json` y `artifacts/predictions.csv`. El modelo queda fuera de Git y se reconstruye con ese script. La aplicación carga estos archivos; si faltan, muestra instrucciones sin entrenar ni descargar por su cuenta.
+
+Para probar la API, abre otro terminal con el mismo entorno activado:
+
+```sh
 uvicorn api:app --host 127.0.0.1 --port 8001
 ```
 
-El entrenamiento descarga el dataset, conserva su SHA256 y genera `artifacts/metrics.json`, `predictions.csv` y el modelo local. El modelo no se sube a GitHub; puede reconstruirse con el script.
+Su documentación está en http://127.0.0.1:8001/docs. `POST /predict` recibe las variables definidas en `Observation` y devuelve alquileres por hora. `GET /health` indica si el modelo está disponible.
 
-## Evaluación
-
-60% inicial para entrenamiento, 20% para selección entre dos configuraciones y 20% final como test. Después de seleccionar hiperparámetros se reentrena con train+validación. Se comparan MAE y RMSE con la demanda de la misma hora de la semana anterior. No se utilizan `casual` o `registered`, que revelan el objetivo.
-
-Los lags se unen por hora exacta; los huecos del dataset no desplazan la referencia temporal. La evaluación simula predicciones sucesivas a una hora con historia observada actualizada. **No equivale a predecir una semana sin conocer sus valores intermedios.** La meteorología se asume disponible; el experimento no mide el error adicional de predecirla. No se promete un porcentaje de mejora ni eficacia en otros sistemas.
-
-Resultados ejecutados: ver [artifacts/metrics.json](artifacts/metrics.json).
-
-## Aplicación interactiva
-
-Abre http://localhost:8501/ (inglés: `/?lang=en`). La configuración del repositorio limita el servicio a loopback y desactiva telemetría. Interfaz oscura ES/EN, ventana temporal editable, comparación observación/modelo/baseline y exportación CSV.
-
-El escenario meteorológico parte de una observación del test. Permite editar temperatura, sensación térmica, humedad y viento normalizados a [0,1], manteniendo calendario e historia constantes. Compara ambas predicciones; no asigna un valor observado al escenario ni recalcula métricas. No estima efectos causales y puede extrapolar con combinaciones poco realistas.
-
-Cambiar de idioma conserva los controles. Cambiar la observación restablece sus condiciones originales. La aplicación no entrena ni descarga datos automáticamente: si faltan artefactos, muestra instrucciones. `PORTFOLIO_URL` configura el enlace de regreso; por defecto http://localhost:4322.
+La configuración local limita Streamlit a tu equipo y desactiva su telemetría. `PORTFOLIO_URL` cambia el enlace de regreso; por defecto usa `http://localhost:4322`.
 
 ## Datos y licencia
 
-[UCI Bike Sharing Dataset](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset), Hadi Fanaee-T, 2013. Dataset bajo CC BY 4.0 según UCI. Se descarga en `data/`, excluido del repositorio. Código bajo MIT.
+Utilizo [UCI Bike Sharing Dataset](https://archive.ics.uci.edu/dataset/275/bike+sharing+dataset), de Hadi Fanaee-T (2013), bajo CC BY 4.0 según UCI. Los datos descargados quedan fuera de Git. El código propio tiene licencia MIT.
+
+Carlos Ramírez Martín

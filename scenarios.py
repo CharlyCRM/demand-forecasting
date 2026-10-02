@@ -1,4 +1,4 @@
-"""Hypothetical weather edits, preserving observed calendar and demand history."""
+"""Compara cambios de meteorología sin alterar el calendario ni el histórico."""
 import numpy as np
 from api import Observation, predict
 from forecast import FEATURES
